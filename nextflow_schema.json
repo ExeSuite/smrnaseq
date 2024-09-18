@@ -346,7 +346,12 @@
                 "skip_fastp": {
                     "type": "boolean",
                     "description": "Skip FastP",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "skip_mirtrace": {
+                    "type": "boolean",
+                    "description": "Skip miRTrace",
+                    "fa_icon": "fas fa-fast-forward"
                 }
             }
         },

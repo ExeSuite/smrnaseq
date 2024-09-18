@@ -159,18 +159,22 @@ workflow NFCORE_SMRNASEQ {
     //
     // MODULE: mirtrace QC
     //
-    FASTQ_FASTQC_UMITOOLS_FASTP.out.adapter_seq
-    .join( ch_reads_for_mirna )
-    .dump()
-    .map { meta, adapter_seq, reads -> [adapter_seq, meta.id, reads] }
-    .groupTuple()
-    .set { ch_mirtrace_inputs }
+    mirtrace_results = Channel.empty()
+    if (!params.skip_mirtrace) {
+        FASTQ_FASTQC_UMITOOLS_FASTP.out.adapter_seq
+        .join( ch_reads_for_mirna )
+        .dump()
+        .map { meta, adapter_seq, reads -> [adapter_seq, meta.id, reads] }
+        .groupTuple()
+        .set { ch_mirtrace_inputs }
 
-    //
-    // SUBWORKFLOW: MIRTRACE
-    //
-    MIRTRACE(ch_mirtrace_inputs)
-    ch_versions = ch_versions.mix(MIRTRACE.out.versions)
+        //
+        // SUBWORKFLOW: MIRTRACE
+        //
+        MIRTRACE(ch_mirtrace_inputs)
+        mirtrace_results = MIRTRACE.out.results
+        ch_versions = ch_versions.mix(MIRTRACE.out.versions)
+    }
 
     //
     // SUBWORKFLOW: remove contaminants from reads
@@ -255,7 +259,7 @@ workflow NFCORE_SMRNASEQ {
         ch_multiqc_files = ch_multiqc_files.mix(MIRNA_QUANT.out.mature_stats.collect({it[1]}).ifEmpty([]))
         ch_multiqc_files = ch_multiqc_files.mix(MIRNA_QUANT.out.hairpin_stats.collect({it[1]}).ifEmpty([]))
         ch_multiqc_files = ch_multiqc_files.mix(MIRNA_QUANT.out.mirtop_logs.collect().ifEmpty([]))
-        ch_multiqc_files = ch_multiqc_files.mix(MIRTRACE.out.results.collect().ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(mirtrace_results.collect().ifEmpty([]))
 
         MULTIQC (
             ch_multiqc_files.collect(),
